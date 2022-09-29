@@ -23,8 +23,8 @@ jobs:
       env:
         version: "4.1.4"
       with:
-        file: open-mpi/Dockerfile
         context: .
+        file: ./open-mpi/Dockerfile
         build-args: 
           OMPI_VERSION=${{ env.version }}
           OMPI_MAJOR_VERSION="v4.1"
