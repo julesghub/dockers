@@ -22,9 +22,8 @@ RUN apt-get update -qq \
 # build mpi
 RUN mkdir -p /tmp/src
 WORKDIR /tmp/src
-ARG OMPI_URL="https://download.open-mpi.org/release/open-mpi/${OMPI_MAJOR_VERSION}/openmpi-${OMPI_VERSION}.tar.gz"
-RUN wget $OMPI_URL --no-check-certificate
-RUN tar -zxf openmpi-${OMPI_VERSION}.tar.gz 
+RUN wget https://download.open-mpi.org/release/open-mpi/${OMPI_MAJOR_VERSION}/openmpi-${OMPI_VERSION}.tar.gz --no-check-certificate \
+&& tar -zxf openmpi-${OMPI_VERSION}.tar.gz 
 WORKDIR /tmp/src/openmpi-${OMPI_VERSION}              
 RUN ./configure ${OMPI_CONFIGURE_OPTIONS} \
  && make ${OMPI_MAKE_OPTIONS} \
