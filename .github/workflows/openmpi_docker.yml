@@ -32,5 +32,6 @@ jobs:
         #  OMPI_VERSION=${{ env.version }}
         #  OMPI_MAJOR_VERSION="v4.1"
         platforms: linux/amd64
+        push: true
         tags: julesg/openmpi:${{ env.version }}
 
