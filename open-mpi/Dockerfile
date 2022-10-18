@@ -28,10 +28,13 @@ WORKDIR /tmp/src/openmpi-${OMPI_VERSION}
 RUN ./configure ${OMPI_CONFIGURE_OPTIONS} \
  && make ${OMPI_MAKE_OPTIONS} \
  && make install \
- && ldconfig
+ && ldconfig \
+ && rm -rf /tmp/
 
-ENV PATH ${OMPI_DIR}/bin:$PATH
-ENV LD_LIBRARY_PATH ${OMPI_DIR}/lib:$LD_LIBRARY_PATH
+WORKDIR /
+
+# ENV PATH ${OMPI_DIR}/bin:$PATH
+# ENV LD_LIBRARY_PATH ${OMPI_DIR}/lib:$LD_LIBRARY_PATH
 
 # ENV NB_USER jovyan
 # ENV NB_WORK /home/$NB_USER
