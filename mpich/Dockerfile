@@ -7,23 +7,27 @@
 # It begins with layers for runtime execution. 
 # The runtime environment (packages, permissions, ENV vars.) 
 # are consistent accross all layer of this Dockerfile. 
-# The final image is a composite for the runtime layer and 
+# The build layer takes the runtime layer and builds the software
+# stack in /usr/local.
+# The final image is a composite of the runtime layer and 
 # minimal sections of the build layer.
 #####################################################################
+
+ARG MPICH_VERSION="3.4.3"
 
 FROM ubuntu:22.04 as runtime
 LABEL maintainer="https://github.com/underworldcode/"
 
-#### Dockerfile ENV vars - for all image stages
-ENV LANG=C.UTF-8
-# openmpi lib will be install at /usr/local/lib
-ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+################
+## 1. Runtime ##
+################
+
 # add user jovyan
 ENV NB_USER jovyan
 ENV NB_HOME /home/$NB_USER
 RUN useradd -m -s /bin/bash -N $NB_USER
- 
-# install runtime packages
+
+#install runtime packages
 RUN apt-get update -qq \
 &&  DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
         ssh  \
@@ -37,13 +41,11 @@ RUN apt-get update -qq \
 
 FROM runtime as build
 
-# Build options for openmpi
-ARG OMPI_MAJOR_VERSION="v4.1"
-ARG OMPI_VERSION="4.1.4"
-ARG OMPI_CONFIGURE_OPTIONS="--prefix=/usr/local"
-ARG OMPI_MAKE_OPTIONS="-j4"
+# Build options for mpich
+ARG MPICH_VERSION
+ARG MPICH_CONFIGURE_OPTIONS="--enable-fast=all,O3 --prefix=/usr/local --with-device=ch4:ofi FFLAGS=-fallow-argument-mismatch FCFLAGS=-fallow-argument-mismatch"
+ARG MPICH_MAKE_OPTIONS="-j4"
 
-# apt get install dependency packages
 RUN apt-get update -qq \
 &&  DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
         wget \
@@ -55,22 +57,24 @@ RUN apt-get update -qq \
 &&  apt-get clean \
 &&  rm -rf /var/lib/apt/lists/*
 
-# build mpi and remove tarball at the end
+# build mpi
 RUN mkdir -p /tmp/src
 WORKDIR /tmp/src
-RUN wget https://download.open-mpi.org/release/open-mpi/${OMPI_MAJOR_VERSION}/openmpi-${OMPI_VERSION}.tar.gz --no-check-certificate \
-&& tar -zxf openmpi-${OMPI_VERSION}.tar.gz 
-WORKDIR /tmp/src/openmpi-${OMPI_VERSION}              
-RUN ./configure ${OMPI_CONFIGURE_OPTIONS} \
-&&  make ${OMPI_MAKE_OPTIONS} \
-&&  make install \
-&&  rm -rf /tmp/src/
+RUN wget http://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz --no-check-certificate \
+&& tar -zxf mpich-${MPICH_VERSION}.tar.gz 
+WORKDIR /tmp/src/mpich-${MPICH_VERSION}              
+RUN ./configure ${MPICH_CONFIGURE_OPTIONS} \
+ && make ${MPICH_MAKE_OPTIONS} \
+ && make install \
+ && ldconfig \
+ && rm -rf /tmp/src/
 
 # record build packages used
 RUN apt-mark showmanual > /opt/installed.txt
 
-
-# Build smaller image
+################
+## 3. Final   ##
+################
 FROM runtime as final
 
 COPY --from=build /usr/local /usr/local
