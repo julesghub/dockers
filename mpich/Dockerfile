@@ -15,7 +15,7 @@
 
 ARG MPICH_VERSION="3.4.3"
 
-FROM ubuntu:22.04 as runtime
+FROM ubuntu:23.10 as runtime
 LABEL maintainer="https://github.com/underworldcode/"
 
 ################

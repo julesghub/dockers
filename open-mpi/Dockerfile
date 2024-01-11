@@ -11,7 +11,7 @@
 # minimal sections of the build layer.
 #####################################################################
 
-FROM ubuntu:22.04 as runtime
+FROM ubuntu:23.10 as runtime
 LABEL maintainer="https://github.com/underworldcode/"
 
 #### Dockerfile ENV vars - for all image stages
