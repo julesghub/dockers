@@ -45,6 +45,7 @@ RUN apt-get update -qq \
 &&  rm -rf /var/lib/apt/lists/*
 
 FROM runtime as build
+# This section only installs GMSH from source, as the arm64 linux pypi packages aren't suppied for gmsh
 
 # copy in from petsc container
 COPY --from=petsc-image --chown=$NB_USER:users /opt /opt
@@ -57,12 +58,16 @@ RUN apt-get update -qq \
 
 # build gmsh from source with NO FLTK support - why?
 # because arm64 linux pypi packages aren't suppied for gmsh
-RUN git clone https://gitlab.onelab.info/gmsh/gmsh.git \
-&& cd gmsh && mkdir build && cd build \ 
-&& cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_BUILD_SHARED=1 -DENABLE_FLTK=0 -DCMAKE_INSTALL_PREFIX=/usr/local/ .. \
-&& make -j8 shared && make install \
-&& cd .. && rm -rf gmsh/
-
+RUN wget https://gitlab.onelab.info/gmsh/gmsh/-/archive/gmsh_4_12_1/gmsh-gmsh_4_12_1.tar.gz \
+&&  tar -xzf gmsh-gmsh_4_12_1.tar.gz \
+&&  cd gmsh-gmsh_4_12_1 && mkdir build && cd build \ 
+&&  cmake -DCMAKE_BUILD_TYPE=Release \
+          -DENABLE_BUILD_SHARED=1 \
+          -DENABLE_FLTK=0 \
+          -DCMAKE_INSTALL_PREFIX=/usr/local/ .. \
+&&  make -j8 shared && make install \
+&&  cd .. && rm -rf gmsh-gmsh_4_12_1/
+    
 FROM runtime as minimal
 COPY --from=build --chown=$NB_USER:users /opt /opt
 COPY --from=build --chown=$NB_USER:users /usr/local /usr/local
@@ -71,8 +76,7 @@ USER $NB_USER
 WORKDIR $NB_HOME
 
 # build and open virtual environment
-RUN python${PYVER} -m venv $NB_HOME/venv \
-&&  . ${NB_HOME}/venv/bin/activate \
+RUN python${PYVER} -m venv ${PYOPT} \
 &&  python${PYVER} -m pip install -U --no-cache-dir \
                     setuptools \
                     wheel 
