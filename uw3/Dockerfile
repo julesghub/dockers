@@ -88,7 +88,7 @@ RUN python${PYVER} -m pip install -U --no-cache-dir \
 
 RUN git clone --branch boundary_integrals --depth 1 https://github.com/underworldcode/underworld3.git uw3 \
 && cd $NB_HOME/uw3 \
-&& python${PYVER} -m pip install -e .
+&& python${PYVER} -m pip install .
 
 # expose port for jupyter lab
 EXPOSE 8888 
