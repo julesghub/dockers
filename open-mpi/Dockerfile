@@ -10,8 +10,9 @@
 # The final image is a composite for the runtime layer and 
 # minimal sections of the build layer.
 #####################################################################
+ARG UBUNTU_VERSION="23.04"
 
-FROM ubuntu:23.10 as runtime
+FROM ubuntu:${UBUNTU_VERSION} as runtime
 LABEL maintainer="https://github.com/underworldcode/"
 
 #### Dockerfile ENV vars - for all image stages
@@ -25,6 +26,7 @@ RUN useradd -m -s /bin/bash -N $NB_USER
  
 # install runtime packages
 RUN apt-get update -qq \
+&&  apt-get upgrade -y \
 &&  DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
         ssh  \
         bash \

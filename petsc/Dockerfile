@@ -12,14 +12,17 @@
 # The final image is a composite of the runtime layer and 
 # minimal sections of the build layer.
 #####################################################################
-
+ARG UBUNTU_VERSION=23.20
+ARG PYVER=3.11
 ARG MPI_IMAGE="underworldcode/openmpi:4.1.4"
 
 FROM ${MPI_IMAGE} as mpi-image
 
-FROM ubuntu:23.10 as runtime
+FROM ubuntu:${UBUNTU_VERSION} as runtime
+ARG PYVER
 LABEL maintainer="https://github.com/underworldcode/"
 
+RUN echo $PYVER && echo " pyver"
 #### Dockerfile ENV vars - for all image stages
 ENV LANG=C.UTF-8
 # mpi lib will be install at /usr/local/lib
@@ -27,7 +30,6 @@ ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 # python env vars. 
 # prepappending on PATH means all pip install will goto the PYOPT
-ENV PYVER=3.11
 ENV PYOPT=/opt/venv
 ENV PATH=$PYOPT/bin:$PATH
 ENV PYTHONPATH=$PYTHONPATH:$PYOPT/lib/python${PYVER}/site-packages
@@ -40,6 +42,7 @@ ENV NB_HOME /home/$NB_USER
 RUN useradd -m -s /bin/bash -N $NB_USER
 
 RUN apt-get update -qq \
+&&  apt-get upgrade -y \
 &&  DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
         bash-completion \
         ssh \
@@ -58,6 +61,7 @@ RUN python${PYVER} -m venv $PYOPT \
 FROM runtime as build
 
 RUN apt-get update -qq \
+&&  apt-get upgrade -y \
 &&  DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
         ca-certificates \
         wget \
@@ -74,7 +78,9 @@ RUN apt-get update -qq \
 # copy in from mpi container
 COPY --from=mpi-image /opt/installed.txt /opt/installed.txt
 COPY --from=mpi-image /usr/local /usr/local
+
 RUN apt-get update -qq \
+&&  apt-get upgrade -y \
 &&  DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends $(awk '{print $1'} /opt/installed.txt) \
 &&  apt-get clean \
 &&  rm -rf /var/lib/apt/lists/*
