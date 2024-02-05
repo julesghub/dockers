@@ -35,6 +35,7 @@ RUN apt-get update -qq \
         gfortran \
         cmake \
         git \
+        vim \
         libopenblas-dev \
         libocct-visualization-dev libocct-data-exchange-dev libocct-draw-dev \
         tcl8.6-dev \
@@ -95,9 +96,17 @@ RUN python${PYVER} -m pip install -U --no-cache-dir \
                     sympy pyvista panel xxhash \ 
                     pytest jupytext ipywidgets trame trame-vtk trame-vuetify
 
-RUN git clone --branch boundary_integrals --depth 1 https://github.com/underworldcode/underworld3.git $NB_HOME/uw3 \
+# install vtk-osmesa
+RUN pip uninstall vtk -y
+RUN pip install --no-cache-dir --extra-index-url https://wheels.vtk.org vtk-osmesa
+
+RUN git clone --branch development --depth 1 https://github.com/underworldcode/underworld3.git $NB_HOME/uw3 \
 && cd $NB_HOME/uw3 \
 && python${PYVER} -m pip install .
+
+# allow jupyterlab for ipyvtk
+ENV JUPYTER_ENABLE_LAB=yes
+ENV PYVISTA_TRAME_SERVER_PROXY_PREFIX='/proxy/'
 
 # default command is to run jupyter lab
 CMD ["jupyter-lab", "--no-browser", "--ip='0.0.0.0'"]
