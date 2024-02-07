@@ -20,36 +20,29 @@ RUN apt-get update -qq \
 &&  apt-get clean \
 &&  rm -rf /var/lib/apt/lists/*
 
-
 USER ${NB_UID}
-
-
+ENV PETSC_DIR /home/jovyan/opt/petsc
 WORKDIR /home/jovyan/
 
-# build petsc, gmsh and underworld3
-#RUN mamba install gmsh petsc mpi4py h5py git cython gcc cxx-compiler openssh binutils make
+# get mamba requirements
 RUN mamba install --yes git \
-            gcc \
-            cxx-compiler \
-            fortran-compiler \
-            binutils \
-            make \
+            compilers \
             mpich-mpicc \
             mpich-mpicxx \
             mpich-mpifort \
+            openssh \
+            binutils \
+            make \
             cython \ 
             mpi4py \
-            openssh \
             sympy \
-            cmake
-
-RUN mamba install --yes petsc --only-deps
+            cmake \
+&& mamba install --yes petsc --only-deps
 
 RUN wget https://gitlab.com/lmoresi/petsc/-/archive/main/petsc-main.tar.gz --no-check-certificate \
 && tar -xf petsc-main.tar.gz \
-&& cd petsc-main 
-WORKDIR /home/jovyan/petsc-main
-RUN PETSC_DIR=`pwd` ./configure --with-debugging=0 \
+&& cd petsc-main \
+&& PETSC_DIR=`pwd` ./configure --prefix=/home/jovyan/opt/petsc --with-debugging=0 \
         LDFLAGS=$LDFLAGS CXXFLAGS=$CXXFLAGS \
         AR=$AR RANLIB=$RANLIB \
         --COPTFLAGS="-g -O3" --CXXOPTFLAGS="-g -O3" --FOPTFLAGS="-g -O3" \
@@ -72,20 +65,17 @@ RUN PETSC_DIR=`pwd` ./configure --with-debugging=0 \
         --download-ctetgen=1 \
         --download-zlib=1 \
         --useThreads=0 \
-&&  make PETSC_DIR=`pwd` PETSC_ARCH=arch-linux-c-opt all
+&&  make PETSC_DIR=`pwd` PETSC_ARCH=arch-linux-c-opt all \
+&&  make PETSC_DIR=`pwd` PETSC_ARCH=arch-linux-c-opt install \
+&&  rm -rf /home/jovyan/petsc-main
 
 # enable PETSC env vars
-ENV PETSC_DIR=/home/jovyan/petsc-main
 ENV PETSC_ARCH=arch-linux-c-opt
-ENV PYTHONPATH=${PETSC_DIR}/${PETSC_ARCH}/lib:${PYTHONPATH}
+ENV PYTHONPATH=${PETSC_DIR}/lib:${PYTHONPATH}
 
 # install the rest of the dependencies
 RUN CC=mpicc HDF5_MPI="ON" HDF5_DIR=/opt/conda pip install h5py --no-cache-dir \
 &&  pip install jupytext gmsh xxhash pint typeguard --no-cache-dir
-#&& jupyter labextension enable jupyterlab-jupytext \
-
-#&&  make PETSC_DIR=`pwd` PETSC_ARCH=arch-linux-c-opt install
-#&&  rm -rf /usr/local/share/petsc
 
 # install underworld3 
 RUN git clone --branch development --depth 1 https://github.com/underworldcode/underworld3.git /home/jovyan/uw3 \
