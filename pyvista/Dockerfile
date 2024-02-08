@@ -1,6 +1,13 @@
 ARG BASE_IMAGE=ghcr.io/pyvista/pyvista:latest
 FROM ${BASE_IMAGE} as base
 
+
+LABEL org.opencontainers.image.source https://github.com/julesghub/dockers/pyvista/
+LABEL org.opencontainers.image.description "Underworld3 package"
+LABEL org.opencontainers.image.licenses="LGPL-3.0"
+LABEL org.opencontainers.image.authors="https://github.com/underworldcode/"
+
+
 USER root
 
 RUN apt-get update -qq \
